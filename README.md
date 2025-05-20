@@ -30,15 +30,25 @@ python video_analysis.py --input path/of/your/video --output ./output/analysis.m
 # Command Line Options
 For main.py:
 `--video`: Input video path (default: use webcam)
+
 `--output`: Output video path (default: ./output/taxi_simulation.mp4)
+
 `--traffic-only`: Use traffic light detector only (no sign detector)
+
 `--debug`: Enable debug mode to show detailed information
+
 `--skip`: Number of frames to skip between processing (default: 1, process 1/2 frames)
+
 For video_analysis.py:
 `--input`: Input video path (required)
+
 `--output`: Output video path (default: ./output/analyzed_video.mp4)
+
 `--signs`: Use sign detector with traffic lights
+
 `--no-preview`: Do not show preview when processing
+
 `--ratio`: Frames processing ratio (default: 2, process 1/2 frames)
+
 `--debug`: Enable debug mode to display detailed information
 
