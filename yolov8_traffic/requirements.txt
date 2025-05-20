@@ -1,0 +1,36 @@
+# --- Core AI Libraries ---
+torch>=2.2.0          # Phiên bản mới, hỗ trợ CUDA 12 (nếu dùng GPU)
+torchvision>=0.17.0
+ultralytics>=8.1.0    # Cập nhật phiên bản ổn định gần đây
+
+# --- Image processing & visualization ---
+opencv-python>=4.9.0
+matplotlib>=3.8.0
+Pillow>=10.2.0
+seaborn>=0.13.0
+
+# --- Data science utilities ---
+numpy>=1.26.0
+pandas>=2.2.0
+scikit-learn>=1.4.0
+tqdm>=4.66.0
+
+# --- Annotation & image handling ---
+pyyaml>=6.0.1
+albumentations>=1.4.0
+
+# --- Logging & Monitoring ---
+tensorboard>=2.16.0
+wandb>=0.16.0
+
+# --- Python environment tools ---
+ipython>=8.22.0
+jupyter>=1.0.0
+notebook>=7.1.0
+
+# --- File handling & utility ---
+glob2>=0.7
+requests>=2.31.0
+
+# --- OS & debugging ---
+psutil>=5.9.8
