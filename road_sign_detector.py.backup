@@ -1,0 +1,888 @@
+import os
+import shutil
+import sys
+
+def backup_road_sign_detector():
+    """Tạo bản sao lưu của file road_sign_detector.py"""
+    source_file = "road_sign_detector.py"
+    backup_file = "road_sign_detector.py.backup"
+    
+    if not os.path.exists(source_file):
+        print(f"Lỗi: Không tìm thấy file {source_file}")
+        return False
+    
+    if os.path.exists(backup_file):
+        print(f"Bản sao lưu {backup_file} đã tồn tại.")
+        return True
+    
+    try:
+        shutil.copy2(source_file, backup_file)
+        print(f"Đã tạo bản sao lưu: {backup_file}")
+        return True
+    except Exception as e:
+        print(f"Lỗi khi tạo bản sao lưu: {e}")
+        return False
+
+def restore_from_backup():
+    """Khôi phục file road_sign_detector.py từ bản sao lưu"""
+    source_file = "road_sign_detector.py.backup"
+    dest_file = "road_sign_detector.py"
+    
+    if not os.path.exists(source_file):
+        print(f"Lỗi: Không tìm thấy bản sao lưu {source_file}")
+        return False
+    
+    try:
+        shutil.copy2(source_file, dest_file)
+        print(f"Đã khôi phục file {dest_file} từ bản sao lưu")
+        return True
+    except Exception as e:
+        print(f"Lỗi khi khôi phục file: {e}")
+        return False
+
+def replace_road_sign_detector():
+    """Thay thế nội dung file road_sign_detector.py bằng detector mới"""
+    # Đọc nội dung file mới
+    new_file = "road_sign_detector_replacement.txt"
+    if os.path.exists(new_file):
+        with open(new_file, 'r', encoding='utf-8') as f:
+            new_content = f.read()
+    else:
+        print(f"Lỗi: Không tìm thấy file {new_file}")
+        return False
+    
+    # Sao lưu file hiện tại
+    if not backup_road_sign_detector():
+        print("Không thể tiếp tục vì không tạo được bản sao lưu")
+        return False
+    
+    # Ghi đè file cũ bằng nội dung mới
+    try:
+        with open("road_sign_detector.py", 'w', encoding='utf-8') as f:
+            f.write(new_content)
+        print("Đã thay thế thành công file road_sign_detector.py")
+        return True
+    except Exception as e:
+        print(f"Lỗi khi thay thế file: {e}")
+        return False
+
+def save_new_detector_content():
+    """Lưu nội dung detector mới vào file tạm"""
+    content = """import cv2
+import numpy as np
+import os
+from pathlib import Path
+import torch
+import time
+
+class RoadSignDetector:
+    """Phát hiện biển báo giao thông Việt Nam dựa trên màu sắc, hình dạng và YOLOv5 (nếu có)."""
+    
+    def __init__(self, model_path=None, conf_threshold=0.6, use_shape_detector=True):
+        """
+        Khởi tạo detector biển báo Việt Nam.
+        
+        Args:
+            model_path: Đường dẫn đến model YOLO đã huấn luyện cho biển báo Việt Nam
+            conf_threshold: Ngưỡng confidence để phát hiện (0.0 - 1.0)
+            use_shape_detector: Có sử dụng phương pháp phát hiện dựa trên hình dạng/màu sắc
+        """
+        self.conf_threshold = conf_threshold
+        self.use_shape_detector = use_shape_detector
+        
+        # Tạo thư mục models nếu chưa có
+        model_dir = Path("./models")
+        model_dir.mkdir(exist_ok=True)
+        
+        # Định nghĩa các loại biển báo Việt Nam phổ biến
+        self.bien_bao_classes = {
+            0: "bien_di_bo",                # Biển đi bộ (biển tròn xanh với hình người đi bộ)
+            1: "bien_cam_do_xe",            # Biển cấm đỗ xe (biển tròn viền đỏ, chữ P gạch chéo)
+            2: "bien_cam_dung_xe",          # Biển cấm dừng và đỗ xe (biển tròn viền đỏ, chữ P và E gạch chéo)
+            3: "bien_toc_do",               # Biển giới hạn tốc độ (biển tròn viền đỏ, số km/h ở giữa)
+            4: "bien_cam_di_nguoc_chieu",   # Biển cấm đi ngược chiều (biển tròn viền đỏ, mũi tên trắng)
+            5: "bien_stop",                 # Biển dừng lại (biển bát giác đỏ, chữ STOP)
+            6: "bien_giao_nhau",            # Biển giao nhau (biển tam giác vàng, hình giao nhau)
+            7: "bien_nguoi_di_bo_cat_ngang" # Biển người đi bộ cắt ngang (biển tam giác người đi bộ)
+        }
+        
+        # Định nghĩa các nhóm biển báo theo màu sắc/hình dạng
+        self.bien_tron_do = ["bien_cam_do_xe", "bien_cam_dung_xe", "bien_toc_do", "bien_cam_di_nguoc_chieu"]
+        self.bien_tron_xanh = ["bien_di_bo"]
+        self.bien_tam_giac = ["bien_giao_nhau", "bien_nguoi_di_bo_cat_ngang"]
+        
+        # Khởi tạo mô hình YOLO nếu được chỉ định
+        self.model = None
+        try:
+            if model_path:
+                print(f"Đang nạp mô hình YOLOv5 từ {model_path}...")
+                self.model = torch.hub.load('ultralytics/yolov5', 'custom', path=model_path)
+                print("Đã nạp mô hình YOLOv5 thành công!")
+        except Exception as e:
+            print(f"Lỗi khi nạp mô hình YOLOv5: {e}")
+            print("Sẽ sử dụng phương pháp phát hiện dựa trên hình dạng và màu sắc.")
+            self.model = None
+        
+        # Lưu trữ các phát hiện gần đây để làm mượt kết quả
+        self.recent_detections = []
+        self.max_history = 5
+        
+        print(f"Đã khởi tạo RoadSignDetector với {len(self.bien_bao_classes)} loại biển báo Việt Nam!")
+    
+    def detect(self, image):
+        """
+        Phát hiện biển báo giao thông trong ảnh.
+        
+        Args:
+            image: Ảnh đầu vào (định dạng OpenCV - BGR)
+            
+        Returns:
+            detections: List các biển báo đã phát hiện
+            annotated_img: Ảnh với kết quả phát hiện được vẽ lên
+        """
+        detections = []
+        
+        # 1. Phát hiện biển báo bằng YOLOv5 nếu có
+        if self.model is not None:
+            yolo_detections = self._detect_with_yolo(image)
+            detections.extend(yolo_detections)
+        
+        # 2. Phát hiện biển báo bằng phương pháp hình dạng và màu sắc
+        if self.use_shape_detector:
+            shape_detections = self._detect_by_shape_and_color(image)
+            detections.extend(shape_detections)
+        
+        # 3. Lọc các phát hiện chồng chéo
+        filtered_detections = self._filter_overlapping_detections(detections)
+        
+        # 4. Cập nhật lịch sử phát hiện để làm mượt kết quả
+        self.recent_detections.append(filtered_detections)
+        if len(self.recent_detections) > self.max_history:
+            self.recent_detections.pop(0)
+        
+        # 5. Làm mượt kết quả qua nhiều frame
+        smoothed_detections = self._smooth_detections()
+        
+        # 6. Vẽ kết quả lên ảnh
+        annotated_img = self._draw_detections(image.copy(), smoothed_detections)
+        
+        return smoothed_detections, annotated_img
+    
+    def _detect_with_yolo(self, image):
+        """
+        Phát hiện biển báo bằng mô hình YOLOv5.
+        
+        Args:
+            image: Ảnh đầu vào
+            
+        Returns:
+            detections: Danh sách các biển báo đã phát hiện
+        """
+        detections = []
+        
+        # Thực hiện dự đoán với YOLOv5
+        results = self.model(image)
+        
+        # Xử lý kết quả
+        for pred in results.xyxy[0]:  # xmin, ymin, xmax, ymax, confidence, class
+            x1, y1, x2, y2, conf, cls_id = pred
+            
+            # Kiểm tra ngưỡng confidence
+            if conf < self.conf_threshold:
+                continue
+            
+            # Lấy tên lớp dựa trên id
+            cls_id = int(cls_id)
+            if cls_id in self.bien_bao_classes:
+                sign_type = self.bien_bao_classes[cls_id]
+            else:
+                sign_type = f"bien_bao_{cls_id}"
+            
+            # Thêm vào danh sách phát hiện
+            detections.append({
+                'bbox': (int(x1), int(y1), int(x2), int(y2)),
+                'confidence': float(conf),
+                'type': sign_type,
+                'source': 'yolo'
+            })
+        
+        return detections
+    
+    def _detect_by_shape_and_color(self, image):
+        """
+        Phát hiện biển báo dựa trên hình dạng và màu sắc.
+        Phương pháp này được tối ưu hóa cho biển báo Việt Nam.
+        
+        Args:
+            image: Ảnh đầu vào
+            
+        Returns:
+            detections: Danh sách các biển báo đã phát hiện
+        """
+        detections = []
+        
+        # Đảm bảo ảnh không quá lớn để tăng tốc độ xử lý
+        max_width = 800
+        if image.shape[1] > max_width:
+            scale = max_width / image.shape[1]
+            width = max_width
+            height = int(image.shape[0] * scale)
+            image_resized = cv2.resize(image, (width, height))
+        else:
+            image_resized = image.copy()
+            scale = 1.0
+        
+        # Chuyển sang không gian màu HSV
+        hsv = cv2.cvtColor(image_resized, cv2.COLOR_BGR2HSV)
+        
+        # Định nghĩa các dải màu HSV cho biển báo
+        # Màu đỏ (cần 2 dải vì đỏ nằm ở đầu và cuối dải màu HSV)
+        lower_red1 = np.array([0, 100, 100])
+        upper_red1 = np.array([10, 255, 255])
+        lower_red2 = np.array([160, 100, 100])
+        upper_red2 = np.array([180, 255, 255])
+        
+        # Màu xanh dương
+        lower_blue = np.array([100, 100, 100])
+        upper_blue = np.array([130, 255, 255])
+        
+        # Màu vàng
+        lower_yellow = np.array([20, 100, 100])
+        upper_yellow = np.array([35, 255, 255])
+        
+        # Tạo mask cho từng màu
+        mask_red1 = cv2.inRange(hsv, lower_red1, upper_red1)
+        mask_red2 = cv2.inRange(hsv, lower_red2, upper_red2)
+        mask_red = cv2.bitwise_or(mask_red1, mask_red2)
+        
+        mask_blue = cv2.inRange(hsv, lower_blue, upper_blue)
+        mask_yellow = cv2.inRange(hsv, lower_yellow, upper_yellow)
+        
+        # Giảm nhiễu
+        kernel = np.ones((5, 5), np.uint8)
+        mask_red = cv2.morphologyEx(mask_red, cv2.MORPH_CLOSE, kernel)
+        mask_blue = cv2.morphologyEx(mask_blue, cv2.MORPH_CLOSE, kernel)
+        mask_yellow = cv2.morphologyEx(mask_yellow, cv2.MORPH_CLOSE, kernel)
+        
+        # Tìm contours cho từng mask
+        contours_red, _ = cv2.findContours(mask_red, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours_blue, _ = cv2.findContours(mask_blue, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        contours_yellow, _ = cv2.findContours(mask_yellow, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        
+        # Xử lý contours màu đỏ (biển cấm, biển stop)
+        for contour in contours_red:
+            area = cv2.contourArea(contour)
+            # Lọc contour quá nhỏ
+            if area < 400:
+                continue
+            
+            # Xác định hình dạng
+            perimeter = cv2.arcLength(contour, True)
+            approx = cv2.approxPolyDP(contour, 0.04 * perimeter, True)
+            
+            # Lấy bounding box
+            x, y, w, h = cv2.boundingRect(contour)
+            
+            # Kiểm tra tỷ lệ khung hình (biển báo thường có tỷ lệ gần 1:1)
+            aspect_ratio = float(w) / h
+            if aspect_ratio < 0.7 or aspect_ratio > 1.3:
+                continue
+            
+            # Tính circularity để phân biệt hình tròn và hình đa giác
+            circularity = 4 * np.pi * area / (perimeter * perimeter) if perimeter > 0 else 0
+            
+            # Phân loại biển báo
+            if len(approx) == 8:
+                # Biển STOP (hình bát giác)
+                sign_type = "bien_stop"
+                confidence = 0.85
+            elif circularity > 0.8 or len(approx) >= 8:
+                # Biển tròn đỏ (biển cấm)
+                sign_type = "bien_cam_do_xe"  # Mặc định
+                confidence = 0.80
+            else:
+                # Các hình dạng đỏ khác
+                sign_type = "bien_cam_di_nguoc_chieu"
+                confidence = 0.70
+            
+            # Tạo một phát hiện mới
+            detections.append({
+                'bbox': (int(x/scale), int(y/scale), int((x+w)/scale), int((y+h)/scale)),
+                'confidence': confidence,
+                'type': sign_type,
+                'source': 'shape_color'
+            })
+        
+        # Xử lý contours màu xanh (biển chỉ dẫn, biển đi bộ)
+        for contour in contours_blue:
+            area = cv2.contourArea(contour)
+            if area < 400:
+                continue
+            
+            perimeter = cv2.arcLength(contour, True)
+            approx = cv2.approxPolyDP(contour, 0.04 * perimeter, True)
+            
+            x, y, w, h = cv2.boundingRect(contour)
+            
+            aspect_ratio = float(w) / h
+            if aspect_ratio < 0.7 or aspect_ratio > 1.3:
+                continue
+            
+            circularity = 4 * np.pi * area / (perimeter * perimeter) if perimeter > 0 else 0
+            
+            if circularity > 0.8 or len(approx) >= 8:
+                # Biển tròn xanh (biển đi bộ)
+                sign_type = "bien_di_bo"
+                confidence = 0.80
+            else:
+                # Biển vuông/chữ nhật xanh (biển chỉ dẫn)
+                sign_type = "bien_chi_dan"
+                confidence = 0.75
+            
+            detections.append({
+                'bbox': (int(x/scale), int(y/scale), int((x+w)/scale), int((y+h)/scale)),
+                'confidence': confidence,
+                'type': sign_type,
+                'source': 'shape_color'
+            })
+        
+        # Xử lý contours màu vàng (biển báo cảnh báo - hình tam giác)
+        for contour in contours_yellow:
+            area = cv2.contourArea(contour)
+            if area < 400:
+                continue
+            
+            perimeter = cv2.arcLength(contour, True)
+            approx = cv2.approxPolyDP(contour, 0.04 * perimeter, True)
+            
+            x, y, w, h = cv2.boundingRect(contour)
+            
+            # Biển báo tam giác thường có tỷ lệ gần 1:1
+            aspect_ratio = float(w) / h
+            if aspect_ratio < 0.7 or aspect_ratio > 1.3:
+                continue
+            
+            if len(approx) == 3 or (len(approx) > 3 and len(approx) <= 5):
+                # Hình tam giác hoặc gần tam giác
+                sign_type = "bien_giao_nhau" # Mặc định biển giao nhau
+                confidence = 0.75
+            else:
+                continue # Bỏ qua contour không phải tam giác
+            
+            detections.append({
+                'bbox': (int(x/scale), int(y/scale), int((x+w)/scale), int((y+h)/scale)),
+                'confidence': confidence,
+                'type': sign_type,
+                'source': 'shape_color'
+            })
+        
+        return detections
+    
+    def _filter_overlapping_detections(self, detections):
+        """
+        Lọc các phát hiện chồng chéo nhau.
+        
+        Args:
+            detections: Danh sách các phát hiện
+            
+        Returns:
+            filtered_detections: Danh sách các phát hiện sau khi lọc
+        """
+        if not detections:
+            return []
+        
+        # Sắp xếp theo confidence giảm dần
+        sorted_dets = sorted(detections, key=lambda x: x['confidence'], reverse=True)
+        filtered = []
+        
+        for det in sorted_dets:
+            # Thêm phát hiện đầu tiên vào danh sách
+            if not filtered:
+                filtered.append(det)
+                continue
+            
+            # Kiểm tra chồng chéo với các phát hiện đã được giữ lại
+            is_overlapping = False
+            for existing_det in filtered:
+                iou = self._calculate_iou(det['bbox'], existing_det['bbox'])
+                if iou > 0.3:  # Ngưỡng IoU (có thể điều chỉnh)
+                    is_overlapping = True
+                    break
+            
+            # Chỉ thêm vào nếu không chồng chéo với bất kỳ phát hiện nào khác
+            if not is_overlapping:
+                filtered.append(det)
+        
+        return filtered
+    
+    def _calculate_iou(self, box1, box2):
+        """
+        Tính IoU (Intersection over Union) giữa hai bounding box.
+        
+        Args:
+            box1: Bounding box thứ nhất (x1, y1, x2, y2)
+            box2: Bounding box thứ hai (x1, y1, x2, y2)
+            
+        Returns:
+            iou: Giá trị IoU (0-1)
+        """
+        # Tính toạ độ của phần giao nhau
+        x1_inter = max(box1[0], box2[0])
+        y1_inter = max(box1[1], box2[1])
+        x2_inter = min(box1[2], box2[2])
+        y2_inter = min(box1[3], box2[3])
+        
+        # Kiểm tra xem hai hộp có giao nhau không
+        if x2_inter < x1_inter or y2_inter < y1_inter:
+            return 0.0
+        
+        # Tính diện tích giao nhau
+        inter_area = (x2_inter - x1_inter) * (y2_inter - y1_inter)
+        
+        # Tính diện tích hai hộp
+        box1_area = (box1[2] - box1[0]) * (box1[3] - box1[1])
+        box2_area = (box2[2] - box2[0]) * (box2[3] - box2[1])
+        
+        # Tính IoU
+        union_area = box1_area + box2_area - inter_area
+        if union_area == 0:
+            return 0.0
+            
+        return inter_area / union_area
+    
+    def _smooth_detections(self):
+        """
+        Làm mượt kết quả phát hiện qua nhiều frame.
+        
+        Returns:
+            smoothed_detections: Danh sách các phát hiện đã được làm mượt
+        """
+        if not self.recent_detections:
+            return []
+        
+        # Nếu chỉ có một frame, trả về kết quả của frame đó
+        if len(self.recent_detections) == 1:
+            return self.recent_detections[0]
+        
+        # Kết hợp các phát hiện từ nhiều frame với trọng số khác nhau (ưu tiên frame mới hơn)
+        all_detections = []
+        weights = []
+        
+        for i, dets in enumerate(self.recent_detections):
+            # Frame mới hơn có trọng số cao hơn
+            weight = (i + 1) / len(self.recent_detections)
+            all_detections.extend(dets)
+            weights.extend([weight] * len(dets))
+        
+        # Nhóm các phát hiện gần nhau
+        grouped_detections = {}
+        
+        for i, det in enumerate(all_detections):
+            x1, y1, x2, y2 = det['bbox']
+            center_x = (x1 + x2) // 2
+            center_y = (y1 + y2) // 2
+            
+            # Tạo key dựa trên vị trí xấp xỉ của biển báo
+            key = f"{center_x // 50}_{center_y // 50}"
+            
+            if key not in grouped_detections:
+                grouped_detections[key] = {
+                    'dets': [det],
+                    'weights': [weights[i]],
+                    'types': [det['type']]
+                }
+            else:
+                grouped_detections[key]['dets'].append(det)
+                grouped_detections[key]['weights'].append(weights[i])
+                grouped_detections[key]['types'].append(det['type'])
+        
+        # Xây dựng kết quả cuối cùng
+        smoothed_detections = []
+        
+        for key, group in grouped_detections.items():
+            dets = group['dets']
+            w = group['weights']
+            types = group['types']
+            
+            # Chọn detection có trọng số cao nhất
+            best_idx = w.index(max(w))
+            best_det = dets[best_idx].copy()
+            
+            # Tính toán loại biển báo phổ biến nhất
+            type_count = {}
+            for i, t in enumerate(types):
+                if t not in type_count:
+                    type_count[t] = w[i]
+                else:
+                    type_count[t] += w[i]
+            
+            # Cập nhật loại biển báo
+            best_type = max(type_count, key=type_count.get)
+            best_det['type'] = best_type
+            
+            smoothed_detections.append(best_det)
+        
+        return smoothed_detections
+    
+    def _draw_detections(self, image, detections):
+        """
+        Vẽ kết quả phát hiện biển báo lên ảnh với hỗ trợ tiếng Việt.
+        
+        Args:
+            image: Ảnh gốc
+            detections: Danh sách các phát hiện
+            
+        Returns:
+            annotated_img: Ảnh với kết quả được vẽ lên
+        """
+        # Sử dụng PIL để vẽ text tiếng Việt
+        try:
+            from PIL import Image, ImageDraw, ImageFont
+            use_pil = True
+            
+            # Chuyển BGR (OpenCV) sang RGB (PIL)
+            pil_image = Image.fromarray(cv2.cvtColor(image, cv2.COLOR_BGR2RGB))
+            draw = ImageDraw.Draw(pil_image)
+            
+            # Cố gắng tìm font có hỗ trợ tiếng Việt
+            try:
+                # Thử tìm các font thường có hỗ trợ tiếng Việt
+                font_candidates = [
+                    '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',  # Linux
+                    '/usr/share/fonts/TTF/DejaVuSans.ttf',  # Linux Alt
+                    '/Library/Fonts/Arial Unicode.ttf',  # macOS
+                    'C:/Windows/Fonts/arial.ttf',  # Windows
+                    'C:/Windows/Fonts/segoeui.ttf',  # Windows
+                    'C:/Windows/Fonts/calibri.ttf',  # Windows
+                    'C:/Windows/Fonts/tahoma.ttf',  # Windows
+                    'C:/Windows/Fonts/times.ttf'  # Windows
+                ]
+                
+                font = None
+                for font_path in font_candidates:
+                    try:
+                        font = ImageFont.truetype(font_path, 16)
+                        break
+                    except OSError:
+                        continue
+                
+                if font is None:
+                    # Nếu không tìm thấy font TTF, sử dụng font mặc định
+                    font = ImageFont.load_default()
+            except Exception as e:
+                print(f"Lỗi khi tìm font: {e}")
+                font = ImageFont.load_default()
+                
+        except ImportError:
+            use_pil = False
+            print("Thư viện PIL không có sẵn. Sẽ sử dụng OpenCV (có thể không hiển thị đúng tiếng Việt)")
+            
+        # Vẽ các kết quả
+        for det in detections:
+            x1, y1, x2, y2 = det['bbox']
+            sign_type = det['type']
+            confidence = det['confidence']
+            
+            # Chọn màu dựa trên loại biển báo
+            if sign_type in self.bien_tron_do:
+                color_cv = (0, 0, 255)  # OpenCV: BGR - Đỏ
+                color_pil = (255, 0, 0)  # PIL: RGB - Đỏ
+            elif sign_type in self.bien_tron_xanh:
+                color_cv = (255, 0, 0)  # OpenCV: BGR - Xanh dương
+                color_pil = (0, 0, 255)  # PIL: RGB - Xanh dương
+            elif sign_type in self.bien_tam_giac:
+                color_cv = (0, 165, 255)  # OpenCV: BGR - Cam
+                color_pil = (255, 165, 0)  # PIL: RGB - Cam
+            elif "stop" in sign_type:
+                color_cv = (0, 0, 255)  # OpenCV: BGR - Đỏ
+                color_pil = (255, 0, 0)  # PIL: RGB - Đỏ
+            else:
+                color_cv = (0, 255, 0)  # OpenCV: BGR - Xanh lá
+                color_pil = (0, 255, 0)  # PIL: RGB - Xanh lá
+            
+            # Định dạng tên biển báo để hiển thị
+            display_name = self._format_display_name(sign_type)
+            label = f"{display_name}: {confidence:.2f}"
+            
+            if use_pil:
+                # Vẽ bounding box trên PIL
+                draw.rectangle([x1, y1, x2, y2], outline=color_pil, width=2)
+                
+                # Vẽ nền cho label
+                text_width, text_height = draw.textbbox((0, 0), label, font=font)[2:4]
+                draw.rectangle([x1, y1 - text_height - 4, x1 + text_width, y1], fill=color_pil)
+                
+                # Vẽ text với PIL
+                draw.text((x1, y1 - text_height - 2), label, fill=(255, 255, 255), font=font)
+            else:
+                # Vẽ với OpenCV (không có hỗ trợ tiếng Việt)
+                cv2.rectangle(image, (x1, y1), (x2, y2), color_cv, 2)
+                
+                # Vẽ nền cho label
+                label_size, _ = cv2.getTextSize(label, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 2)
+                cv2.rectangle(image, (x1, y1 - 25), (x1 + label_size[0], y1), color_cv, -1)
+                
+                # Vẽ text với OpenCV
+                cv2.putText(image, label, (x1, y1 - 7), 
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+        
+        if use_pil:
+            # Chuyển trở lại định dạng OpenCV
+            return cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+        else:
+            return image
+    
+    def _format_display_name(self, sign_type):
+        """
+        Định dạng tên biển báo để hiển thị.
+        
+        Args:
+            sign_type: Loại biển báo (string)
+            
+        Returns:
+            display_name: Tên hiển thị đã được định dạng
+        """
+        # Bảng mapping tên tiếng Việt
+        name_map = {
+            "bien_di_bo": "Đi bộ",
+            "bien_cam_do_xe": "Cấm đỗ xe",
+            "bien_cam_dung_xe": "Cấm dừng xe",
+            "bien_toc_do": "Tốc độ",
+            "bien_cam_di_nguoc_chieu": "Cấm ngược chiều",
+            "bien_stop": "STOP",
+            "bien_giao_nhau": "Giao nhau",
+            "bien_nguoi_di_bo_cat_ngang": "Người đi bộ",
+            "bien_chi_dan": "Chỉ dẫn",
+            "red_circle_sign": "Biển tròn đỏ",
+            "blue_circle_sign": "Biển tròn xanh",
+            "red_triangle_sign": "Biển tam giác đỏ",
+            "blue_square_sign": "Biển vuông xanh"
+        }
+        
+        # Sử dụng tên từ bảng mapping nếu có
+        if sign_type in name_map:
+            return name_map[sign_type]
+        
+        # Nếu không có trong bảng, xử lý chuỗi
+        if sign_type.startswith("bien_"):
+            name = sign_type[5:].replace("_", " ")
+            return name.title()
+        
+        return sign_type.replace("_", " ").title()
+
+# Hàm test với webcam
+def test_road_sign_detector():
+    """Chạy detector với webcam."""
+    # Khởi tạo detector
+    detector = RoadSignDetector()
+    
+    # Mở webcam
+    cap = cv2.VideoCapture(0)
+    if not cap.isOpened():
+        print("Không thể mở webcam!")
+        return
+    
+    # Các biến đếm FPS
+    fps_start_time = time.time()
+    fps_counter = 0
+    fps = 0
+    
+    print("Đang chạy detector biển báo với webcam. Nhấn 'q' để thoát.")
+    
+    while True:
+        ret, frame = cap.read()
+        if not ret:
+            print("Không thể đọc frame từ webcam.")
+            break
+        
+        # Đếm FPS
+        fps_counter += 1
+        if time.time() - fps_start_time > 1.0:
+            fps = fps_counter
+            fps_counter = 0
+            fps_start_time = time.time()
+        
+        # Phát hiện biển báo
+        start_time = time.time()
+        detections, annotated_frame = detector.detect(frame)
+        process_time = time.time() - start_time
+        
+        # Hiển thị thông tin FPS và thời gian xử lý
+        # Sử dụng PIL nếu có sẵn để hỗ trợ tiếng Việt
+        try:
+            from PIL import Image, ImageDraw, ImageFont
+            # Chuyển sang định dạng PIL
+            pil_frame = Image.fromarray(cv2.cvtColor(annotated_frame, cv2.COLOR_BGR2RGB))
+            draw = ImageDraw.Draw(pil_frame)
+            
+            # Tìm font cho tiếng Việt
+            font_candidates = [
+                '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf',  # Linux
+                '/usr/share/fonts/TTF/DejaVuSans.ttf',  # Linux Alt
+                '/Library/Fonts/Arial Unicode.ttf',  # macOS
+                'C:/Windows/Fonts/arial.ttf',  # Windows
+                'C:/Windows/Fonts/segoeui.ttf',  # Windows
+                'C:/Windows/Fonts/calibri.ttf',  # Windows
+                'C:/Windows/Fonts/times.ttf',  # Windows
+                'C:/Windows/Fonts/tahoma.ttf'   # Windows (thường hỗ trợ tốt tiếng Việt)
+            ]
+            
+            font = None
+            for font_path in font_candidates:
+                try:
+                    font = ImageFont.truetype(font_path, 20)
+                    break
+                except:
+                    continue
+            
+            if font is None:
+                font = ImageFont.load_default()
+            
+            # Vẽ thông tin
+            info_text = f"FPS: {fps} | Thời gian xử lý: {process_time:.3f}s"
+            count_text = f"Số biển báo: {len(detections)}"
+            
+            # Vẽ nền tối để text dễ đọc
+            draw.rectangle([10, 10, 350, 40], fill=(0, 0, 0, 180))
+            draw.rectangle([10, 45, 350, 75], fill=(0, 0, 0, 180))
+            
+            # Vẽ text
+            draw.text((15, 15), info_text, font=font, fill=(0, 255, 0))
+            draw.text((15, 50), count_text, font=font, fill=(0, 255, 0))
+            
+            # Chuyển trở lại OpenCV
+            annotated_frame = cv2.cvtColor(np.array(pil_frame), cv2.COLOR_RGB2BGR)
+            
+        except ImportError:
+            # Sử dụng OpenCV nếu không có PIL
+            cv2.putText(annotated_frame, f"FPS: {fps} | Process time: {process_time:.3f}s", 
+                       (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 4)
+            cv2.putText(annotated_frame, f"FPS: {fps} | Process time: {process_time:.3f}s", 
+                       (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 1)
+            
+            cv2.putText(annotated_frame, f"Bien bao: {len(detections)}", 
+                       (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 0, 0), 4)
+            cv2.putText(annotated_frame, f"Bien bao: {len(detections)}", 
+                       (10, 60), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 1)
+        
+        # Hiển thị kết quả
+        cv2.imshow('Phat hien bien bao Viet Nam', annotated_frame)
+        
+        # Kiểm tra phím thoát
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+            break
+    
+    # Giải phóng tài nguyên
+    cap.release()
+    cv2.destroyAllWindows()
+
+# Chạy nếu script được gọi trực tiếp
+if __name__ == "__main__":
+    import argparse
+    
+    # Phân tích tham số dòng lệnh
+    parser = argparse.ArgumentParser(description='Phát hiện biển báo giao thông Việt Nam')
+    parser.add_argument('--webcam', action='store_true', help='Sử dụng webcam thay vì ảnh')
+    parser.add_argument('--images', nargs='+', help='Đường dẫn đến ảnh')
+    parser.add_argument('--model', type=str, default=None, help='Đường dẫn đến model YOLOv5 (tùy chọn)')
+    
+    args = parser.parse_args()
+    
+    if args.webcam:
+        test_road_sign_detector()
+    elif args.images:
+        # Định nghĩa hàm test_detector_with_images tại đây
+        def test_detector_with_images(image_paths):
+            """
+            Chạy detector với các ảnh có sẵn.
+            
+            Args:
+                image_paths: Danh sách đường dẫn đến ảnh
+            """
+            detector = RoadSignDetector()
+            
+            # Tạo thư mục output nếu chưa có
+            output_dir = Path("./output")
+            output_dir.mkdir(exist_ok=True)
+            
+            # Xử lý từng ảnh
+            for img_path in image_paths:
+                print(f"Đang xử lý ảnh: {img_path}")
+                
+                # Đọc ảnh
+                image = cv2.imread(str(img_path))
+                if image is None:
+                    print(f"Không thể đọc ảnh: {img_path}")
+                    continue
+                
+                # Phát hiện biển báo
+                start_time = time.time()
+                detections, annotated_image = detector.detect(image)
+                process_time = time.time() - start_time
+                
+                # Hiển thị thông tin xử lý
+                print(f"  Thời gian xử lý: {process_time:.3f} giây")
+                print(f"  Tìm thấy {len(detections)} biển báo:")
+                
+                for i, det in enumerate(detections):
+                    print(f"    {i+1}. {detector._format_display_name(det['type'])}: {det['confidence']:.2f}")
+                
+                # Lưu ảnh kết quả
+                img_path_obj = Path(img_path)
+                output_path = output_dir / f"result_{img_path_obj.stem}{img_path_obj.suffix}"
+                cv2.imwrite(str(output_path), annotated_image)
+                print(f"  Đã lưu kết quả tại: {output_path}")
+                
+                # Hiển thị ảnh nếu cần
+                cv2.imshow("Kết quả", annotated_image)
+                cv2.waitKey(0)
+            
+            cv2.destroyAllWindows()
+            
+        test_detector_with_images(args.images)
+    else:
+        print("Chọn chế độ chạy mặc định: Phát hiện với webcam")
+        test_road_sign_detector()"""
+    
+    try:
+        with open("road_sign_detector_replacement.txt", 'w', encoding='utf-8') as f:
+            f.write(content)
+        print("Đã lưu nội dung mới vào file tạm road_sign_detector_replacement.txt")
+        return True
+    except Exception as e:
+        print(f"Lỗi khi lưu nội dung mới: {e}")
+        return False
+
+def main():
+    """Chương trình chính."""
+    print("\n=== CÔNG CỤ THAY THẾ ROAD SIGN DETECTOR ===")
+    print("1. Sao lưu file hiện tại và thay thế bằng code mới")
+    print("2. Khôi phục file từ bản sao lưu")
+    print("3. Thoát")
+    
+    choice = input("\nLựa chọn của bạn (1-3): ")
+    
+    if choice == '1':
+        # Lưu nội dung mới vào file tạm
+        if save_new_detector_content():
+            # Thay thế file hiện tại
+            if replace_road_sign_detector():
+                print("\n✅ ĐÃ THAY THẾ THÀNH CÔNG FILE ROAD_SIGN_DETECTOR.PY")
+                print("Bây giờ file này chứa code detector biển báo Việt Nam với tên class RoadSignDetector")
+                print("File cũ đã được sao lưu tại road_sign_detector.py.backup nếu bạn cần khôi phục")
+            else:
+                print("\n❌ KHÔNG THỂ THAY THẾ FILE")
+        else:
+            print("\n❌ KHÔNG THỂ TẠO FILE TẠM")
+    elif choice == '2':
+        if restore_from_backup():
+            print("\n✅ ĐÃ KHÔI PHỤC FILE THÀNH CÔNG")
+        else:
+            print("\n❌ KHÔNG THỂ KHÔI PHỤC FILE")
+    elif choice == '3':
+        print("Thoát chương trình.")
+    else:
+        print("Lựa chọn không hợp lệ.")
+
+if __name__ == "__main__":
+    main()
