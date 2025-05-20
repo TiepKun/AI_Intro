@@ -26,9 +26,22 @@ Detailed video analysis:
 ```bash
 python video_analysis.py --input path/of/your/video --output ./output/analysis.mp4 --signs --debug
 ```
+# Shortcuts during running
+While the system is running, you can use the following shortcuts:
+
+`q`: Exit the program
+
+`s`: Save the current image
+
+`d`: Enable/disable debug mode
+
+`1`: Enable/disable traffic light detector
+
+`2`: Enable/disable road sign detector
 
 # Command Line Options
 For main.py:
+
 `--video`: Input video path (default: use webcam)
 
 `--output`: Output video path (default: ./output/taxi_simulation.mp4)
@@ -40,6 +53,7 @@ For main.py:
 `--skip`: Number of frames to skip between processing (default: 1, process 1/2 frames)
 
 For video_analysis.py:
+
 `--input`: Input video path (required)
 
 `--output`: Output video path (default: ./output/analyzed_video.mp4)
@@ -52,3 +66,11 @@ For video_analysis.py:
 
 `--debug`: Enable debug mode to display detailed information
 
+# Adjusting the thresholds
+If you are still having trouble with detection, you can adjust the thresholds directly in the code:
+In main.py or video_analysis.py:
+```bash
+traffic_detector = TrafficLightDetector(conf_threshold=0.3) # Reduce the threshold to 0.3
+
+sign_detector = RoadSignDetector(conf_threshold=0.4) # Reduce the threshold to 0.4
+```
