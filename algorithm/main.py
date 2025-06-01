@@ -7,21 +7,17 @@ import networkx as nx
 center_point = (21.00538744581636, 105.834666695635)
 G = ox.graph_from_point(center_point, dist=3000, network_type='drive')
 # Chuyển G sang dạng dict trọng số theo 'length'
-graph = {}
-for node in G.nodes():
-    graph[node] = {}
+graph = {node: {} for node in G.nodes()}
 for u, v, data in G.edges(data=True):
-    length = data.get('length', 1)  # lấy trọng số độ dài, mặc định 1 nếu không có
-    # Nếu nhiều cạnh giữa u->v thì ghi cạnh có độ dài nhỏ nhất
-    if v not in graph[u] or length < graph[u][v]:
-        graph[u][v] = length
+        length = data.get('length', 1)
+        graph[u][v] = min(length, graph[u].get(v, float('inf')))
 
 # Lấy tọa độ node để tính heuristic
 positions = {node: (data['x'], data['y']) for node, data in G.nodes(data=True)}
 
 # Tìm node gần nhất với 2 điểm
 orig_point = (21.00538744581636, 105.84546706679828)
-dest_point = (21.028708, 105.851313)
+dest_point = (21.001962, 105.840989)
 
 orig_node = nearest_nodes(G, X=orig_point[1], Y=orig_point[0])
 dest_node = nearest_nodes(G, X=dest_point[1], Y=dest_point[0])

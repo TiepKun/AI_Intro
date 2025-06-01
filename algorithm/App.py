@@ -44,7 +44,7 @@ if "length" not in st.session_state:
 
 if st.button("Tìm đường đi"):
     center_point = ((start_lat + end_lat) / 2, (start_lon + end_lon) / 2)
-    G = ox.graph_from_point(center_point, dist=3000, network_type='drive')
+    G = ox.graph_from_point(center_point, dist=4000, network_type='drive')
 
     orig_node = ox.distance.nearest_nodes(G, start_lon, start_lat)
     dest_node = ox.distance.nearest_nodes(G, end_lon, end_lat)
@@ -72,7 +72,7 @@ if st.button("Tìm đường đi"):
 if st.session_state.path and st.session_state.center_point:
     path = st.session_state.path
     center_point = st.session_state.center_point
-    G = ox.graph_from_point(center_point, dist=3000, network_type='drive')
+    G = ox.graph_from_point(center_point, dist=4000, network_type='drive')
 
     coords = [(G.nodes[n]['y'], G.nodes[n]['x']) for n in path]
     m = folium.Map(location=center_point, zoom_start=14)
