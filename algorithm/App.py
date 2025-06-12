@@ -8,7 +8,8 @@ from Dijkstra import dijkstra
 from A_star import astar
 from BFS1 import bfs
 from DFS import dfs_iterative
-import time
+from time import perf_counter 
+import timeit
 st.set_page_config(layout="centered")
 st.title("🚗 Tìm đường ngắn nhất")
 
@@ -36,6 +37,7 @@ places = {
     "Ng. Tự Do": (20.9987525070749, 105.84727359563394),
     "Chợ Đồng Xuân": (21.034682, 105.847419),
     "Văn Miếu": (21.027680, 105.835800),
+    "Đại học ngoại ngữ-DHQGHN":(21.04067745010787, 105.78209484808852),
 }
 # ==========================
 # 2. NHẬP ĐIỂM BẮT ĐẦU VÀ KẾT THÚC
@@ -73,7 +75,7 @@ if "center_point" not in st.session_state:
     st.session_state.center_point = None
 def run_algorithm(graph, orig_node, dest_node, positions, algo_name):
     """Chạy thuật toán và đo thời gian"""
-    start_time = time.time()
+    #start_time = perf_counter()
     
     if algo_name == "A* (A-Star)":
         path, length = astar(graph, orig_node, dest_node, positions)
@@ -84,10 +86,10 @@ def run_algorithm(graph, orig_node, dest_node, positions, algo_name):
     elif algo_name == "DFS (Depth-First Search)":
         path, length = dfs_iterative(graph, orig_node, dest_node)
     
-    end_time = time.time()
-    execution_time = (end_time - start_time) * 1000  # Convert to milliseconds
+    #end_time = perf_counter()
+    #execution_time = (end_time - start_time) * 1000  # Convert to milliseconds
     
-    return path, length, execution_time
+    return path, length, #execution_time
 
 
 if st.button("Tìm đường đi", type="primary"):
@@ -106,7 +108,9 @@ if st.button("Tìm đường đi", type="primary"):
     positions = {node: (data['x'], data['y']) for node, data in G.nodes(data=True)}
 
      # Chạy thuật toán được chọn
-    path, length, exec_time = run_algorithm(graph, orig_node, dest_node, positions, algorithm)
+    #path, length, exec_time = run_algorithm(graph, orig_node, dest_node, positions, algorithm)
+    path, length = run_algorithm(graph, orig_node, dest_node, positions, algorithm)
+    exec_time = timeit.timeit("run_algorithm(graph, orig_node, dest_node, positions, algorithm)", globals=globals(), number=10)
     if not path:
         st.error("Không tìm thấy đường đi.")
         st.session_state.path = None
