@@ -1,0 +1,3 @@
+*.zip
+**/traffic_light_datasets/
+**/*dataset*
