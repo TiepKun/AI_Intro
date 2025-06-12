@@ -2,7 +2,8 @@ import heapq
 import math
 # A* heuristic
 def heuristic(a, b):
-    return math.hypot(a[0]-b[0], a[1]-b[1])
+    #return ((a[0]-b[0])**2 + (a[1]-b[1])**2) ** 0.5
+    return 1.5 * math.hypot(a[0] - b[0], a[1] - b[1])
 
 def astar(graph, start, goal, positions):
     queue = []
