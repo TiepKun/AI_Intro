@@ -1,0 +1,2 @@
+*.zip filter=lfs diff=lfs merge=lfs -text
+lisa-traffic-light-dataset.zip filter=lfs diff=lfs merge=lfs -text
