@@ -5,7 +5,7 @@ import matplotlib.pyplot as plt
 # Lấy bản đồ đường ở Hà Nội
 center_point = (21.00538744581636, 105.834666695635)
 print("Đang tải bản đồ...")
-G = ox.graph_from_point(center_point, dist=4000, network_type="drive") 
+G = ox.graph_from_point(center_point, dist=3000, network_type="drive") 
 print("Tải xong.")
 
 # Tọa độ 2 điểm (lat, lon)
@@ -21,28 +21,41 @@ shortest_path = nx.dijkstra_path(G, orig_node, dest_node, weight='length')
 print(f"Đường đi có {len(shortest_path)} điểm.")
 
 # Vẽ bản đồ
+# Vẽ bản đồ
 fig, ax = ox.plot_graph(
     G,
     node_size=5,
-    node_color='gray',
-    edge_color='lightgray',
-    edge_linewidth=0.5,
+    node_color='blue',
+    edge_color='gray',
+    edge_linewidth=0.6,
     show=False,
     close=False,
     bgcolor='white'
 )
-# ve duong di
-ox.plot_graph_route(
-
-    G, 
-    route=shortest_path, 
-    ax=ax, 
-    route_color='red',
-    route_linewidth=3,
-    node_size=0,
-    show=True,
-    close=True
+# Đánh dấu điểm gốc trên bản đồ
+ax.plot(
+    orig_point[1],  # X = longitude
+    orig_point[0],  # Y = latitude
+    marker='o',
+    color='red',
+    markersize=10,
+    label='Cổng Trần Đại Nghĩa'
 )
+
+# Hiển thị chú thích và bản đồ
+ax.legend()
+# ve duong di
+#ox.plot_graph_route(
+
+ #   G, 
+ #   route=shortest_path, 
+ #   ax=ax, 
+ #   route_color='red',
+ #   route_linewidth=3,
+ #   node_size=0,
+ #   show=True,
+ #   close=True
+#)
 plt.show()
 
 input("Nhấn Enter để thoát...")
