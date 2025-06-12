@@ -170,6 +170,7 @@ if st.session_state.results and st.session_state.center_point:
         popup=f"Đích: {end_place}", 
         icon=folium.Icon(color="red", icon="stop")
     ).add_to(m)
+
     
     # Đường đi
     route_color = color_map.get(results['algorithm'], "blue")
