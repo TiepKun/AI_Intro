@@ -13,9 +13,10 @@ def astar(graph, start, goal, positions):
     g_score[start] = 0
     f_score = {node: float('inf') for node in graph}
     f_score[start] = heuristic(positions[start], positions[goal])
-    #Truy ngược đường đi
+
     while queue:
         _, current = heapq.heappop(queue)
+        #Truy ngược đường đi
         if current == goal:
             path = []
             while current in came_from:

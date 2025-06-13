@@ -5,9 +5,10 @@ def dijkstra(graph, start, goal):
         distances = {node: float('inf') for node in graph}
         distances[start] = 0
         came_from = {}
-       #Truy ngược đường đi
+       
         while queue:
               cost, current = heapq.heappop(queue)
+              #Truy ngược đường đi
               if current == goal:
                 path = []
                 while current in came_from:
