@@ -38,6 +38,7 @@ places = {
     "Chợ Đồng Xuân": (21.034682, 105.847419),
     "Văn Miếu": (21.027680, 105.835800),
     "Đại học ngoại ngữ-DHQGHN":(21.04067745010787, 105.78209484808852),
+    "Học viện tài chính":(21.075518601423287, 105.7727608747718),
 }
 # ==========================
 # 2. NHẬP ĐIỂM BẮT ĐẦU VÀ KẾT THÚC
@@ -74,7 +75,7 @@ if "results" not in st.session_state:
 if "center_point" not in st.session_state:
     st.session_state.center_point = None
 def run_algorithm(graph, orig_node, dest_node, positions, algo_name):
-    """Chạy thuật toán và đo thời gian"""
+    
     #start_time = perf_counter()
     
     if algo_name == "A* (A-Star)":
@@ -100,16 +101,17 @@ if st.button("Tìm đường đi", type="primary"):
     orig_node = ox.distance.nearest_nodes(G, start_lon, start_lat)
     dest_node = ox.distance.nearest_nodes(G, end_lon, end_lat)
 
-    graph = {node: {} for node in G.nodes()}
+    graph = {node: {} for node in G.nodes()} # Khởi tạo một dictionary rỗng cho mỗi đỉnh trong đồ thị G
     for u, v, data in G.edges(data=True):
-        length = data.get('length', 1)
-        graph[u][v] = min(length, graph[u].get(v, float('inf')))
+        length = data.get('length', 1)       #Lấy độ dài của đoạn đường nối u và v nếu không có mặc định là 1 
+        graph[u][v] = min(length, graph[u].get(v, float('inf'))) #cập nhật vào  graph[u][v] độ dài nhỏ nhất
 
     positions = {node: (data['x'], data['y']) for node, data in G.nodes(data=True)}
 
      # Chạy thuật toán được chọn
     #path, length, exec_time = run_algorithm(graph, orig_node, dest_node, positions, algorithm)
     path, length = run_algorithm(graph, orig_node, dest_node, positions, algorithm)
+    #đo thời gian
     exec_time = timeit.timeit("run_algorithm(graph, orig_node, dest_node, positions, algorithm)", globals=globals(), number=10)
     if not path:
         st.error("Không tìm thấy đường đi.")
@@ -171,7 +173,7 @@ if st.session_state.results and st.session_state.center_point:
         icon=folium.Icon(color="red", icon="stop")
     ).add_to(m)
 
-    
+
     # Đường đi
     route_color = color_map.get(results['algorithm'], "blue")
     folium.PolyLine(

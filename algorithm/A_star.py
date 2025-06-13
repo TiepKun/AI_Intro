@@ -13,7 +13,7 @@ def astar(graph, start, goal, positions):
     g_score[start] = 0
     f_score = {node: float('inf') for node in graph}
     f_score[start] = heuristic(positions[start], positions[goal])
-
+    #Truy ngược đường đi
     while queue:
         _, current = heapq.heappop(queue)
         if current == goal:
@@ -23,6 +23,7 @@ def astar(graph, start, goal, positions):
                 current = came_from[current]
             path.append(start)
             return path[::-1] ,g_score[goal]
+        #xét hàng xóm
         for neighbor in graph.get(current, {}):
             tentative = g_score[current] + graph[current][neighbor]
             if tentative < g_score[neighbor]:
